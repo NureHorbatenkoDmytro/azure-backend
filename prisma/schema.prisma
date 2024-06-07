@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email     String    @unique
+  password  String?
+  provider  Provider?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  roles     Role[]
+  isBlocked Boolean   @default(false) @map("is_blocked")
+  plants    Plant[]
+  Token     Token[]
+
+  @@map("users")
+}
+
+model Token {
+  token     String   @unique
+  exp       DateTime
+  userId    String   @db.Uuid
+  userAgent String   @map("user_agent")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
+}
+
+model Plant {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name          String
+  plantTypeId   String    @db.Uuid
+  userId        String    @db.Uuid
+  plantingDate  DateTime  @map("planting_date")
+  currentStatus String    @map("current_status")
+  soilType      String    @map("soil_type")
+  data          Data[]
+  type          PlantType @relation(fields: [plantTypeId], references: [id])
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("plants")
+}
+
+model Data {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  humidity      Float
+  temperature   Float
+  light         Float
+  nutrientLevel Float    @map("nutrient_level")
+  plantId       String   @db.Uuid
+  timestamp     DateTime @default(now())
+  plant         Plant    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@map("data")
+}
+
+model PlantType {
+  id                 String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  typeName           String  @map("type_name")
+  description        String
+  optimalHumidity    Float   @map("optimal_humidity")
+  optimalTemperature Float   @map("optimal_temperature")
+  optimalLight       Float   @map("optimal_light")
+  plants             Plant[]
+
+  @@map("plant_types")
+}
+
+enum Role {
+  ADMIN
+  USER
+  SENSOR
+}
+
+enum Provider {
+  GOOGLE
+}
