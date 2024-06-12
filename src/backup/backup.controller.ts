@@ -31,6 +31,21 @@ const JSZip = require('jszip');
 export class BackupController {
   constructor(private readonly backupService: BackupService) {}
 
+  @ApiOperation({ summary: 'Get all backups' })
+  @Get()
+  @Roles(Role.ADMIN)
+  async getAllBackups() {
+    const backupsDirectory = path.resolve('backups');
+    if (!fs.existsSync(backupsDirectory)) {
+      throw new NotFoundException('Backups directory not found');
+    }
+
+    const files = fs
+      .readdirSync(backupsDirectory)
+      .filter((file) => fs.lstatSync(path.join(backupsDirectory, file)).isDirectory());
+    return files;
+  }
+
   @ApiOperation({ summary: 'Create a backup' })
   @Post()
   @Roles(Role.ADMIN)

@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Injectable,
   Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -28,11 +29,18 @@ export class AuthService {
   ) {}
 
   async refreshTokens(refreshToken: string, agent: string): Promise<Tokens> {
-    const token = await this.prismaService.token.delete({ where: { token: refreshToken } });
+    const token = await this.prismaService.token.findUnique({
+      where: { token: refreshToken },
+    });
+
     if (!token || new Date(token.exp) < new Date()) {
-      await this.deleteRefreshToken(refreshToken);
-      throw new ConflictException();
+      throw new ConflictException('Token not found or expired');
     }
+
+    await this.prismaService.token.delete({
+      where: { token: refreshToken },
+    });
+
     const user = await this.userService.findOne(token.userId);
     return this.generateTokens(user, agent);
   }
@@ -96,8 +104,16 @@ export class AuthService {
     });
   }
 
-  deleteRefreshToken(token: string) {
-    return this.prismaService.token.delete({ where: { token } });
+  async deleteRefreshToken(token: string) {
+    const existingToken = await this.prismaService.token.findUnique({
+      where: { token },
+    });
+
+    if (!existingToken) throw new NotFoundException('Token not found');
+
+    return this.prismaService.token.delete({
+      where: { token },
+    });
   }
 
   async providerAuth(email: string, agent: string, provider: Provider) {

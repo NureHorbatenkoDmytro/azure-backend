@@ -7,22 +7,33 @@ import {
   Param,
   ParseUUIDPipe,
   Put,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 
 import { UserResponse } from './responses';
 import { UserService } from './user.service';
 
+import { RolesGuard } from '@auth/guargs/role.guard';
 import { JwtPayload } from '@auth/interfaces';
-import { CurrentUser } from '@common/decorators';
+import { CurrentUser, Roles } from '@common/decorators';
 
 @ApiBearerAuth()
 @ApiTags('user')
 @Controller('user')
+@UseGuards(RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Roles(Role.ADMIN)
+  @UseInterceptors(ClassSerializerInterceptor)
+  @Get('/all')
+  async getAllUsers() {
+    const users = await this.userService.getAllUsers();
+    return users.map((user) => new UserResponse(user));
+  }
 
   @UseInterceptors(ClassSerializerInterceptor)
   @Get(':idOrEmail')

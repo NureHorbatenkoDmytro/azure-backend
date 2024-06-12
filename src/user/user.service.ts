@@ -18,6 +18,10 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
 
+  async getAllUsers(): Promise<User[]> {
+    return this.prismaService.user.findMany();
+  }
+
   async save(user: Partial<User>) {
     const hashedPassword = user?.password ? this.hashPassword(user.password) : null;
     const savedUser = await this.prismaService.user.upsert({

@@ -14,8 +14,10 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
 
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: 'https://gentle-water-014c56003.5.azurestaticapps.net',
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
   });
   app.use(cookieParser());
   app.useGlobalInterceptors();
